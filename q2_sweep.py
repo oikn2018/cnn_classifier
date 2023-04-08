@@ -203,11 +203,11 @@ def evaluation(dataloader, model):
   return 100*correct/total
 
 
-sweep_config_1 = {
+sweep_config_parta = {
     "name" : "Assignment2_P1_Q2_",
     "method" : "bayes",
     'metric': {
-        'name': 'val_acc',
+        'name': 'validation_accuracy',
         'goal': 'maximize'
     },
     "parameters" : {
@@ -250,7 +250,7 @@ sweep_config_1 = {
 
 
 
-sweep_id_1 = wandb.sweep(sweep_config_1,project='Testing', entity='dl_research')
+sweep_id_parta = wandb.sweep(sweep_config_parta,project='Testing', entity='dl_research')
 
 def train():
     torch.cuda.empty_cache()
@@ -394,7 +394,7 @@ def train():
             wandb.log(metrics)     
 
 
-wandb.agent(sweep_id_1, function=train, count=10)
+wandb.agent(sweep_id_parta, function=train, count=10)
 
 # print("Final Scores: \nModel Hyperparameters: {}\nAccuracy: {}\nLoss: {}\nValidation Accuracy: {}\nValidation Loss {}".format(tuned_models[0]['model'], tuned_models[0]['accuracy'], tuned_models[0]['loss'], tuned_models[0]['validation_accuracy'], tuned_models[0]['validation_loss']))
 
