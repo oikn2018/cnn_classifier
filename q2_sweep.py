@@ -190,7 +190,10 @@ class CNN(nn.Module):
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+print('GPU Allocated: {}, Available: {}'.format(torch.cuda.get_device_name(torch.cuda.current_device()), torch.cuda.is_available()))
 torch.cuda.empty_cache() 
+
 def evaluation(dataloader, model):
   total, correct = 0, 0
   for data in dataloader:
@@ -394,7 +397,7 @@ def train():
             wandb.log(metrics)     
 
 
-wandb.agent(sweep_id_parta, function=train, count=10)
+wandb.agent('bxdejte9', function=train, count=5)
 
 # print("Final Scores: \nModel Hyperparameters: {}\nAccuracy: {}\nLoss: {}\nValidation Accuracy: {}\nValidation Loss {}".format(tuned_models[0]['model'], tuned_models[0]['accuracy'], tuned_models[0]['loss'], tuned_models[0]['validation_accuracy'], tuned_models[0]['validation_loss']))
 
