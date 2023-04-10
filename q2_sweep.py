@@ -362,6 +362,7 @@ def train():
                 torch.cuda.empty_cache()
                 # loss = loss.item()
                 # loss_arr.append(loss.item())
+            net.eval()
             with torch.no_grad():
                 for i, data in enumerate(val_loader, 0):
                     inputs, labels = data
@@ -375,7 +376,7 @@ def train():
                     # val_loss_arr.append(val_loss.item())
                     del inputs, labels, outputs
                     torch.cuda.empty_cache()
-        
+            net.train()
             # loss_ep_arr.append(loss.item())
             # val_loss_ep_arr.append(val_loss.item())
 
