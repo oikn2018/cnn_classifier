@@ -1,6 +1,5 @@
 # CS6910 Assignment 2
-Name: Oikantik Nath | Roll: CS22S013 | Course: CS6910 Fundamentals of Deep Learning | [WandB Report](https://wandb.ai/dl_research/Testing/reports/CS6910-Assignment-1--VmlldzozODEwMzcx)
-
+Name: Oikantik Nath | Roll: CS22S013 | Course: CS6910 Fundamentals of Deep Learning | [WandB Report](https://wandb.ai/dl_research/Testing/reports/CS6910-Assignment-2--VmlldzozOTQ4OTQ0?accessToken=2tquusi34lylzkeg6anhqvij3zsl2t25yfmo9h0jnec7i8ejhz3xhh11l5rga40q)
 ## Question 1
 Code can be accessed [here](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q1.ipynb). `keras.datasets` is used to get `fashion_mnist` dataset and 1 sample image is plotted for each class using `wandb.log()`.
 
