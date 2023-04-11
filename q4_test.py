@@ -46,16 +46,16 @@ if not os.path.exists(filename) and not os.path.exists("inaturalist_12K"):
 
 
 
-url_best_model='https://www.dropbox.com/s/uzlps86ei8x17gn/best_model.pth'
+# url_best_model='https://www.dropbox.com/s/uzlps86ei8x17gn/best_model.pth'
 
-# filename_best_model = os.path.basename(url)
+# # filename_best_model = os.path.basename(url)
 
-# if not os.path.exists(filename_best_model) and not os.path.exists("best_model.pth"):
-#   filename_best_model = wget.download(url_best_model)
-# #   os.remove(filename_best_model)
+# # if not os.path.exists(filename_best_model) and not os.path.exists("best_model.pth"):
+# #   filename_best_model = wget.download(url_best_model)
+# # #   os.remove(filename_best_model)
 
 
-wget.download(url_best_model)
+# wget.download(url_best_model)
 
 # if not os.path.exists("best_model.pth"):
 #   model_filename = wget.download(url_best_model)
@@ -293,13 +293,13 @@ sweep_config_parta = {
 
 
 
-# sweep_id_parta = wandb.sweep(sweep_config_parta,project=config['wandb_project'], entity=config['wandb_entity'])
+sweep_id_parta = wandb.sweep(sweep_config_parta,project=config['wandb_project'], entity=config['wandb_entity'])
 
 def test():
     torch.cuda.empty_cache()
     with wandb.init() as run:
 
-        config = wandb.config
+        # config = wandb.config
 
         batch_size = config['batch_size']
 
@@ -332,77 +332,82 @@ def test():
 
 
         net = CNN(config=config).to(device)
-        best_model = torch.load('best_model.pth')
-        print(best_model['epoch'])
-        net.load_state_dict(best_model)
-        print(net.parameters())
-        net.eval()
+        opt = optim.Adam(net.parameters(), lr=config['learning_rate'])
+        checkpoint = torch.load('best_model.pth')
+        epoch = checkpoint['epoch']
+        # print(best_model['model_state_dict'])
+        net.load_state_dict(checkpoint['model_state_dict'])
+        # for param in net.parameters():
+        #    print(param.size())
+        
+        # print(best_model['optimizer_state_dict'])
         loss_fn = nn.CrossEntropyLoss()
-        opt = net.load_state_dict()
+        opt.load_state_dict(checkpoint['optimizer_state_dict'])
+
+
+
         run.name = net.run_name
         print(run.name)
+        net.eval()
 
-#         for epoch in range(config['epochs']):
-#             min_test_loss = float('inf')
-#             # for i, data in enumerate(train_loader, 0):
-#             #     inputs, labels = data
-#             #     inputs, labels = inputs.to(device), labels.to(device)
-#             #     opt.zero_grad()
-#             #     outputs = net(inputs)
-#             #     loss = loss_fn(outputs, labels)
-#             #     loss.backward()
-#             #     opt.step()
+            # for i, data in enumerate(train_loader, 0):
+            #     inputs, labels = data
+            #     inputs, labels = inputs.to(device), labels.to(device)
+            #     opt.zero_grad()
+            #     outputs = net(inputs)
+            #     loss = loss_fn(outputs, labels)
+            #     loss.backward()
+            #     opt.step()
 
-#             #     del inputs, labels, outputs
-#             #     torch.cuda.empty_cache()
+            #     del inputs, labels, outputs
+            #     torch.cuda.empty_cache()
 
-#             net.eval()
-#             with torch.no_grad():
-#                 for i, data in enumerate(test_loader, 0):
-#                     inputs, labels = data
-#                     inputs, labels = inputs.to(device), labels.to(device)     
-#                     # Forward Pass
-#                     outputs = net(inputs)
-#                     # Find the Loss
-#                     test_loss = loss_fn(outputs, labels)
+        with torch.no_grad():
+            for i, data in enumerate(test_loader, 0):
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)     
+                # Forward Pass
+                outputs = net(inputs)
+                # Find the Loss
+                test_loss = loss_fn(outputs, labels)
 
-#                     if test_loss < min_test_loss:
-#                         min_test_loss = test_loss
-#                         print(f"\nMin Test loss: {min_test_loss}")
-#                         print(f"\nSaving best model for epoch: {epoch+1}\n")
-#                         torch.save({
-#                             'epoch': epoch+1,
-#                             'model_state_dict': net.state_dict(),
-#                             'optimizer_state_dict': opt.state_dict(),
-#                             'loss': loss_fn,
-#                             }, 'outputs/best_model.pth')
+                # if test_loss < min_test_loss:
+                #     min_test_loss = test_loss
+                #     print(f"\nMin Test loss: {min_test_loss}")
+                #     print(f"\nSaving best model for epoch: {epoch+1}\n")
+                #     torch.save({
+                #         'epoch': epoch+1,
+                #         'model_state_dict': net.state_dict(),
+                #         'optimizer_state_dict': opt.state_dict(),
+                #         'loss': loss_fn,
+                #         }, 'outputs/best_model.pth')
 
-#                     # val_loss = val_loss.item()
-#                     # val_loss_arr.append(val_loss.item())
-#                     del inputs, labels, outputs
-#                     torch.cuda.empty_cache()
-#             net.train()
-#             # loss_ep_arr.append(loss.item())
-#             # val_loss_ep_arr.append(val_loss.item())
+                # val_loss = val_loss.item()
+                # val_loss_arr.append(val_loss.item())
+                del inputs, labels, outputs
+                torch.cuda.empty_cache()
+        # net.train()
+        # loss_ep_arr.append(loss.item())
+        # val_loss_ep_arr.append(val_loss.item())
 
-#             # loss = loss.item()
-#             # val_loss = val_loss.item()
-#             train_acc = evaluation(train_loader, net)
-#             test_acc = evaluation(test_loader,net)
-#             print('Epoch: %d/%d, Loss: %0.2f, Val Loss: %0.2f, Test accuracy: %0.2f, Train accuracy: %0.2f'%((epoch+1), config['epochs'], loss.item(), test_loss.item(), test_acc, train_acc))
+        # loss = loss.item()
+        # val_loss = val_loss.item()
+        # train_acc = evaluation(train_loader, net)
+        test_acc = evaluation(test_loader,net)
+        print('Epoch: %d, Test Loss: %0.2f, Test accuracy: %0.2f'%(epoch, test_loss.item(), test_acc))
 
-        
-#             metrics = {
-#             "accuracy":train_acc,
-#             "loss":loss.item(),
-#             "test_accuracy": test_acc,
-#             "test_loss": test_loss.item(),
-#             "epochs":(epoch+1)
-#             }
+    
+        metrics = {
+        # "accuracy":train_acc,
+        # "loss":loss.item(),
+        "test_accuracy": test_acc,
+        "test_loss": test_loss.item(),
+        "epochs":epoch
+        }
 
-#             wandb.log(metrics)     
+        wandb.log(metrics)     
 
 
-# wandb.agent(sweep_id_parta, function=train, count=1)
+wandb.agent(sweep_id_parta, function=test, count=1)
 
-train()
+# test()
