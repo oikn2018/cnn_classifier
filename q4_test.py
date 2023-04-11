@@ -12,9 +12,11 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 import random
 import wget
+from torchvision.utils import make_grid
 import wandb
 import os
 import datetime
+from matplotlib import gridspec
 from zipfile import ZipFile
 from PIL import Image
 from torchvision.datasets import ImageFolder
@@ -48,7 +50,8 @@ if not os.path.exists(filename) and not os.path.exists("inaturalist_12K"):
 
 
 url = 'https://drive.google.com/uc?id=1-yEMoh5h3DHms7LD_ot7hpMbB9Xymyk2&export=download'
-gdown.download(url = url, output='best_model.pth', quiet=False, fuzzy=True)
+if not os.path.exists('best_model.pth'):
+    gdown.download(url = url, output='best_model.pth', quiet=False, fuzzy=True)
 
 #default Config
 config = {
@@ -66,6 +69,10 @@ config = {
     "batch_size":8,
     "epochs": 15
     }
+
+
+
+wandb.init(project="Testing", entity="dl_research", name="Question 4")
 
 #Adding Command Line Arguments
 parser = argparse.ArgumentParser()
@@ -101,7 +108,7 @@ parser.add_argument('-ep','--epochs', type=type(config['epochs']), nargs='?', de
 
 args = parser.parse_args()
 config  = vars(args)
-print(config)
+
 
 
 
@@ -111,6 +118,7 @@ classes = sorted([name for name in os.listdir("inaturalist_12K/train") if name !
 image_size = (256,256)
 num_layers = 5
 num_classes = len(classes)
+
 
 
 
@@ -208,124 +216,104 @@ def evaluation(dataloader, model):
   return 100*correct/total
 
 
-sweep_config_parta = {
-    "name" : "Assignment2_PA_Q4",
-    "method" : "bayes",
-    'metric': {
-        'name': 'test_accuracy',
-        'goal': 'maximize'
-    },
-    "parameters" : {
-        "epochs" : {
-            "values" : [config['epochs']]
-        },
-        "batch_size": {
-            "values": [config['batch_size']]
-        },
-        'activation': {
-            'values': [config['activation']]
-        },
-        'learning_rate':{
-            "values": [config['learning_rate']]
-        },
-        "dropout": {
-            "values": [config['dropout']]
-        },
-        "batch_norm": {
-              "values": [config['batch_norm']]
-        },
-        "data_augment": {
-              "values": [config['data_augment']]
-        },
-        'size_filters':{
-            'values': [config['size_filters']]
-        },
-        'filters_org': {
-            'values': [config['filters_org']]
-        },
-        'num_filters': {
-            'values': [config['num_filters']]
-        },
-        "dense_layer_size": {
-              "values": [config['dense_layer_size']]
-          }        
-    }
-}
+torch.cuda.empty_cache()
+
+
+batch_size = config['batch_size']
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5,0.5,0.5)),
+    transforms.RandomResizedCrop(256, antialias=True)
+])
+
+test_dataset = ImageFolder(
+    'inaturalist_12K/val',
+    transform=transform_test
+)
+
+
+# Use the samplers to create the DataLoader for test set
+test_loader = torch.utils.data.DataLoader(
+    dataset = test_dataset,
+    batch_size=batch_size,
+    shuffle = True
+)
+
+
+
+net = CNN(config=config).to(device)
+opt = optim.Adam(net.parameters(), lr=config['learning_rate'])
+checkpoint = torch.load('best_model.pth')
+epoch = checkpoint['epoch']
+
+net.load_state_dict(checkpoint['model_state_dict'])
+
+loss_fn = nn.CrossEntropyLoss()
+opt.load_state_dict(checkpoint['optimizer_state_dict'])
+
+
+
+name = net.run_name
+print("Best Model Config: {}".format(name))
+net.eval()
+
+with torch.no_grad():
+    for i, data in enumerate(test_loader, 0):
+        inputs, labels = data
+        inputs, labels = inputs.to(device), labels.to(device)     
+        # Forward Pass
+        outputs = net(inputs)
+        # Find the Loss
+        test_loss = loss_fn(outputs, labels)
+
+        del inputs, labels, outputs
+        torch.cuda.empty_cache()
+
+test_acc = evaluation(test_loader,net)
+print('Test Loss: %0.2f, Test accuracy: %0.2f'%(test_loss.item(), test_acc))
 
 
 
 
-sweep_id_parta = wandb.sweep(sweep_config_parta,project=config['wandb_project'], entity=config['wandb_entity'])
 
-def test():
-    torch.cuda.empty_cache()
-    with wandb.init() as run:
+image_list = []
+label_list = []
+i=0
 
-        # config = wandb.config
-
-        batch_size = config['batch_size']
-
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5,0.5,0.5)),
-            transforms.RandomResizedCrop(256)
-        ])
-
-        test_dataset = ImageFolder(
-            'inaturalist_12K/val',
-            transform=transform_test
-        )
-
-
-        # Use the samplers to create the DataLoader for test set
-        test_loader = torch.utils.data.DataLoader(
-            dataset = test_dataset,
-            batch_size=batch_size,
-            # sampler=test_sampler
-            shuffle = False
-        )
+def imshow(img, title):
+   npimg = img.numpy()/2 + 0.5
+   plt.figure()
+   plt.axis('off')
+   plt.imshow(np.transpose(npimg, (1,2,0)))
+   plt.title(title)
+   plt.show()
 
 
 
-        net = CNN(config=config).to(device)
-        opt = optim.Adam(net.parameters(), lr=config['learning_rate'])
-        checkpoint = torch.load('best_model.pth')
-        epoch = checkpoint['epoch']
+for count in range(len(classes)):
+   
+    images, labels = next(iter(test_loader))
+    images, labels = images.to(device), labels.to(device)
+    # for image, label in random.sample(list(zip(images, labels)), 3):
+    outputs = net(images)
+    _, pred_labels = torch.max(outputs.data, 1)
+    pred_labels = pred_labels.flatten().tolist()
+    labels = labels.flatten().tolist()
 
-        net.load_state_dict(checkpoint['model_state_dict'])
-
-        loss_fn = nn.CrossEntropyLoss()
-        opt.load_state_dict(checkpoint['optimizer_state_dict'])
-
-
-
-        run.name = net.run_name
-        print(run.name)
-        net.eval()
-
-        with torch.no_grad():
-            for i, data in enumerate(test_loader, 0):
-                inputs, labels = data
-                inputs, labels = inputs.to(device), labels.to(device)     
-                # Forward Pass
-                outputs = net(inputs)
-                # Find the Loss
-                test_loss = loss_fn(outputs, labels)
-
-                del inputs, labels, outputs
-                torch.cuda.empty_cache()
-
-        test_acc = evaluation(test_loader,net)
-        print('Test Loss: %0.2f, Test accuracy: %0.2f'%(test_loss.item(), test_acc))
-
+    randlist = random.sample(range(8), 3)
     
-        metrics = {
-        "test_accuracy": test_acc,
-        "test_loss": test_loss.item(),
-        "epochs":epoch
-        }
+    classify = ""
+    for index in randlist:
+        true_class = classes[pred_labels[index]]
+        pred_class = classes[labels[index]]
+        flag = 'Correct Classification' if true_class == pred_class else 'Wrong Classification'
+        classify = 'True Class: ' + true_class + "\n" + 'Predicted Class: ' + pred_class + "\n" + flag
 
-        wandb.log(metrics)     
+        image_list.append(images[index].to('cpu'))
+        label_list.append(classify)
 
 
-wandb.agent(sweep_id_parta, function=test, count=1)
+
+wandb.log({"Sample images from Test Data and Predictions by Best Model": [wandb.Image(image, caption=label, grouping = 3) for image, label in zip(image_list, label_list)]})
+
