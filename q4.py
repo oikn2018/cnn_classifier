@@ -363,6 +363,7 @@ def train():
         print(run.name)
 
         for epoch in range(config['epochs']):
+            min_test_loss = float('inf')
             for i, data in enumerate(train_loader, 0):
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
@@ -384,6 +385,17 @@ def train():
                     outputs = net(inputs)
                     # Find the Loss
                     test_loss = loss_fn(outputs, labels)
+
+                    if test_loss < min_test_loss:
+                        min_test_loss = test_loss
+                        print(f"\nMin Test loss: {min_test_loss}")
+                        print(f"\nSaving best model for epoch: {epoch+1}\n")
+                        torch.save({
+                            'epoch': epoch+1,
+                            'model_state_dict': net.state_dict(),
+                            'optimizer_state_dict': opt.state_dict(),
+                            'loss': loss_fn,
+                            }, 'outputs/best_model.pth')
 
                     # val_loss = val_loss.item()
                     # val_loss_arr.append(val_loss.item())
