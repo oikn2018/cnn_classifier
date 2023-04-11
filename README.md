@@ -1,15 +1,68 @@
 # CS6910 Assignment 2
 Name: Oikantik Nath | Roll: CS22S013 | Course: CS6910 Fundamentals of Deep Learning | [WandB Report](https://wandb.ai/dl_research/Testing/reports/CS6910-Assignment-2--VmlldzozOTQ4OTQ0?accessToken=2tquusi34lylzkeg6anhqvij3zsl2t25yfmo9h0jnec7i8ejhz3xhh11l5rga40q)
-## Question 1
-Code can be accessed [here](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q1.ipynb). `keras.datasets` is used to get `fashion_mnist` dataset and 1 sample image is plotted for each class using `wandb.log()`.
 
-## Questions 2-4
-The neural network is implemented by the class `FeedForwardNN`, present in the `train.py` file.  Access it [here](https://github.com/oikn2018/CS6910_assignment_1/blob/main/train.py).
+## Part A: Training from scratch
+### Question 2
+Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/q2_sweep.py).
+
+**Configuration for Sweeps:**
+
+```python
+sweep_config_parta = {
+    "name" : "Assignment2_P1_Q2_",
+    "method" : "bayes",
+    'metric': {
+        'name': 'validation_accuracy',
+        'goal': 'maximize'
+    },
+    "parameters" : {
+        "epochs" : {
+            "values" : [10,15,20]
+        },
+        "batch_size": {
+            "values": [8, 16, 32]
+        },
+        'activation': {
+            'values': ['ReLU', 'leaky_relu', 'GELU', 'SiLU']
+        },
+        'learning_rate':{
+            "values": [0.001,0.005, 0.0001,0.0005]
+        },
+        "dropout": {
+            "values": [0,0.1,0.2]
+        },
+        "batch_norm": {
+              "values": [True,False]
+        },
+        "data_augment": {
+              "values": [True,False]
+        },
+        'size_filters':{
+            'values': [[7,5,5,3,3], [11,9,7,5,3]]
+        },
+        'filters_org': {
+            'values': [1, 2, 0.5]
+        },
+        'num_filters': {
+            'values': [32, 64]
+        },
+        "dense_layer_size": {
+              "values": [64, 128]
+          }        
+    }
+}
+```
 
 ### Run the Code
 To run the code, execute in cmd: 
+`python q2_sweep.py`
+
+### Question 4
+Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/q4.py).
+### Run the Code
+To run the code, execute in cmd: 
 #### Format:
-`python train.py -wp <wandb_project_name> -we <wandb_entity_name> -e <epochs> -b <batch_size> -o <optimizer> -lr <learning_rate> -w_i <weight_initialization_method> -nhl <num_hidden_layers> -sz <size_hidden_layer> -a <activation_function>`
+`python q4.py -wp <wandb_project_name> -we <wandb_entity_name> -e <epochs> -b <batch_size> -o <optimizer> -lr <learning_rate> -w_i <weight_initialization_method> -nhl <num_hidden_layers> -sz <size_hidden_layer> -a <activation_function>`
 
 #### To test it on the best model achieved:
 `python train.py -wp Testing -we dl_research -e 20 -b 64 -o nadam -lr 0.005 -w_i Xavier -nhl 5 -sz 512 -a sigmoid`
