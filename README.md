@@ -59,6 +59,7 @@ To run the code, execute in cmd:
 
 ### Question 4
 Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/q4.py).
+Best model: https://drive.google.com/file/d/1-yEMoh5h3DHms7LD_ot7hpMbB9Xymyk2/view?usp=share_link
 ### Run the Code
 To run the code, execute in cmd: 
 #### Format:
