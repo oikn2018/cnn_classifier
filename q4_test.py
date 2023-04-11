@@ -2,6 +2,7 @@
 # !pip install wget
 
 import torch
+import gdown
 import torch.nn as nn
 import matplotlib
 import matplotlib.pyplot as plt
@@ -46,21 +47,8 @@ if not os.path.exists(filename) and not os.path.exists("inaturalist_12K"):
 
 
 
-# url_best_model='https://www.dropbox.com/s/uzlps86ei8x17gn/best_model.pth'
-
-# # filename_best_model = os.path.basename(url)
-
-# # if not os.path.exists(filename_best_model) and not os.path.exists("best_model.pth"):
-# #   filename_best_model = wget.download(url_best_model)
-# # #   os.remove(filename_best_model)
-
-
-# wget.download(url_best_model)
-
-# if not os.path.exists("best_model.pth"):
-#   model_filename = wget.download(url_best_model)
-# else:
-#   model_filename = 'best_model.pth'
+url = 'https://drive.google.com/uc?id=1-yEMoh5h3DHms7LD_ot7hpMbB9Xymyk2&export=download'
+gdown.download(url = url, output='best_model.pth', quiet=False, fuzzy=True)
 
 #default Config
 config = {
@@ -132,32 +120,6 @@ class CNN(nn.Module):
 
     if config == None:
        config = config
-    #   config = {}
-    #   config['size_filters'] = [7,5,5,3,3]
-    #   config['activation'] = 'ReLU'
-    #   config['learning_rate'] = 1e-3
-    #   config['filters_org'] =  1
-    #   config['num_filters'] =  64
-    #   config['dense_layer_size'] =  256
-    #   config['batch_norm'] =  True
-    #   config['data_augment'] = True
-    #   config['dropout'] = 0.2
-    #   config['batch_size'] = 32
-    #   config['epochs'] =  10
-    # else:
-    #   self.size_filters = config['size_filters']
-    #   self.activation = config['activation']
-    #   self.learning_rate = config['learning_rate']
-    #   self.filters_org =  config['filters_org']
-    #   self.num_filters =  config['num_filters']
-    #   self.dense_layer_size = config['dense_layer_size']
-    #   self.batch_norm = config['batch_norm']
-    #   self.data_augment = config['data_augment']
-    #   self.dropout = config['dropout']
-    #   self.batch_size = config['batch_size']
-    #   self.epochs =  config['epochs']
-
-    
 
     list_filters = []
     for i in range(5):
@@ -303,13 +265,7 @@ def test():
 
         batch_size = config['batch_size']
 
-        
-
-        
-
         transform_test = transforms.Compose([
-            # transforms.RandomResizedCrop(256),
-            # transforms.Resize(image_size),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5,0.5,0.5)),
             transforms.RandomResizedCrop(256)
@@ -335,12 +291,9 @@ def test():
         opt = optim.Adam(net.parameters(), lr=config['learning_rate'])
         checkpoint = torch.load('best_model.pth')
         epoch = checkpoint['epoch']
-        # print(best_model['model_state_dict'])
+
         net.load_state_dict(checkpoint['model_state_dict'])
-        # for param in net.parameters():
-        #    print(param.size())
-        
-        # print(best_model['optimizer_state_dict'])
+
         loss_fn = nn.CrossEntropyLoss()
         opt.load_state_dict(checkpoint['optimizer_state_dict'])
 
@@ -349,18 +302,6 @@ def test():
         run.name = net.run_name
         print(run.name)
         net.eval()
-
-            # for i, data in enumerate(train_loader, 0):
-            #     inputs, labels = data
-            #     inputs, labels = inputs.to(device), labels.to(device)
-            #     opt.zero_grad()
-            #     outputs = net(inputs)
-            #     loss = loss_fn(outputs, labels)
-            #     loss.backward()
-            #     opt.step()
-
-            #     del inputs, labels, outputs
-            #     torch.cuda.empty_cache()
 
         with torch.no_grad():
             for i, data in enumerate(test_loader, 0):
@@ -371,35 +312,14 @@ def test():
                 # Find the Loss
                 test_loss = loss_fn(outputs, labels)
 
-                # if test_loss < min_test_loss:
-                #     min_test_loss = test_loss
-                #     print(f"\nMin Test loss: {min_test_loss}")
-                #     print(f"\nSaving best model for epoch: {epoch+1}\n")
-                #     torch.save({
-                #         'epoch': epoch+1,
-                #         'model_state_dict': net.state_dict(),
-                #         'optimizer_state_dict': opt.state_dict(),
-                #         'loss': loss_fn,
-                #         }, 'outputs/best_model.pth')
-
-                # val_loss = val_loss.item()
-                # val_loss_arr.append(val_loss.item())
                 del inputs, labels, outputs
                 torch.cuda.empty_cache()
-        # net.train()
-        # loss_ep_arr.append(loss.item())
-        # val_loss_ep_arr.append(val_loss.item())
 
-        # loss = loss.item()
-        # val_loss = val_loss.item()
-        # train_acc = evaluation(train_loader, net)
         test_acc = evaluation(test_loader,net)
-        print('Epoch: %d, Test Loss: %0.2f, Test accuracy: %0.2f'%(epoch, test_loss.item(), test_acc))
+        print('Test Loss: %0.2f, Test accuracy: %0.2f'%(test_loss.item(), test_acc))
 
     
         metrics = {
-        # "accuracy":train_acc,
-        # "loss":loss.item(),
         "test_accuracy": test_acc,
         "test_loss": test_loss.item(),
         "epochs":epoch
@@ -409,5 +329,3 @@ def test():
 
 
 wandb.agent(sweep_id_parta, function=test, count=1)
-
-# test()
