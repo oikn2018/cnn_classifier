@@ -316,4 +316,3 @@ for count in range(len(classes)):
 
 
 wandb.log({"Sample images from Test Data and Predictions by Best Model": [wandb.Image(image, caption=label, grouping = 3) for image, label in zip(image_list, label_list)]})
-
