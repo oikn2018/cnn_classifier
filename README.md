@@ -3,7 +3,7 @@ Name: Oikantik Nath | Roll: CS22S013 | Course: CS6910 Fundamentals of Deep Learn
 
 ## Part A: Training from scratch
 ### Question 2
-Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/q2_sweep.py).
+Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartA/q2_sweep.py).
 
 **Configuration for Sweeps:**
 
@@ -54,86 +54,38 @@ sweep_config_parta = {
 ```
 
 ### Run the Code
-To run the code, execute in cmd: 
-`python q2_sweep.py`
+Code to log a single run with desired hyperparameters vis cmd is given at this [link](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartA/q2.py).
+
+#### Format: 
+`python q2.py -wp <wandb_project> -we <wandb_entity> -sf <size_filters> -ac <activation> -lr <learning_rate> -fo <filters_org> -nf <num_filters> -dls <dense_layer_size> -bn <batch_norm> -da <data_augment> -do <dropout> -bs <batch_size> -ep <epochs>`
+
+To obtain validation accuracy of my best model: 
+`python q2.py`
+
+NOTE: 
+best_model.pth file containing the State Dict of my best model and optimizer can be found at this [link](https://drive.google.com/uc?id=1-yEMoh5h3DHms7LD_ot7hpMbB9Xymyk2&export=download)
 
 ### Question 4
-Code for running sweeps can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/q4.py).
-Best model: https://drive.google.com/file/d/1-yEMoh5h3DHms7LD_ot7hpMbB9Xymyk2/view?usp=share_link
-https://www.dropbox.com/s/uzlps86ei8x17gn/best_model.pth
+Code for this question can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartA/q4_test.py).
+
 ### Run the Code
-To run the code, execute in cmd: 
-#### Format:
-`python q4.py -wp <wandb_project_name> -we <wandb_entity_name> -e <epochs> -b <batch_size> -o <optimizer> -lr <learning_rate> -w_i <weight_initialization_method> -nhl <num_hidden_layers> -sz <size_hidden_layer> -a <activation_function>`
-
-#### To test it on the best model achieved:
-`python train.py -wp Testing -we dl_research -e 20 -b 64 -o nadam -lr 0.005 -w_i Xavier -nhl 5 -sz 512 -a sigmoid`
-
-## Question 7
-The confusion matrix code is available [here](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q7.py). It is tested on the Fashion-MNIST test data and the output confusion matrix is logged in the report.
-
-
-## Question 10
-Since the MNIST dataset is much simpler in terms of image complexity compared to Fashion-MNIST dataset which I have used in my experimentation, so I suggest the following 3 configurations that give me the best accuracy scores on the Fashion-MNIST dataset. You can access code [here](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q10.py).
-
-- Configuration 1: 
+To test my best model, execute in cmd: 
 ```python
-config = { 
-	"epochs" : 20,
-	"learning_rate": 0.005,
-	"no_hidden_layers": 5, 
-	"hidden_layers_size": 512,
-	"weight_decay": 0,
-	"optimizer": "nadam",
-	"batch_size": 64,
-	"weight_initialization" : "xavier" ,
-	"activations" : "sigmoid",
-}
+pip install gdown
+pip install --upgrade gdown
+python q4_test.py
 ```
-To run above configuration, download [code](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q10.py) from GitHub and execute following command on cmd:
-`python Q10.py -wp Testing -we dl_research -d mnist -e 20 -b 64 -o nadam -lr 0.005 -w_i Xavier -nhl 5 -sz 512 -a sigmoid`
 
-- Configuration 2: 
-```python
-config = { 
-	"epochs" : 20,
-	"learning_rate": 0.005,
-	"no_hidden_layers": 5, 
-	"hidden_layers_size": 256,
-	"weight_decay": 0,
-	"optimizer": "nadam",
-	"batch_size": 32,
-	"weight_initialization" : "xavier" ,
-	"activations" : "tanh",
-}
-```
-To run above configuration, download [code](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q10.py) from GitHub and execute following command on cmd:
-`python Q10.py -wp Testing -we dl_research -d mnist -e 20 -b 32 -o nadam -lr 0.005 -w_i Xavier -nhl 5 -sz 256 -a tanh`
-
-
-- Configuration 3: 
-```python
-config = { 
-	"epochs" : 20,
-	"learning_rate": 0.0001,
-	"no_hidden_layers": 5, 
-	"hidden_layers_size": 256,
-	"weight_decay": 0,
-	"optimizer": "adam",
-	"batch_size": 128,
-	"weight_initialization" : "xavier" ,
-	"activations" : "relu",
-}
-```
-To run above configuration, download [code](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q10.py) from GitHub and execute following command on cmd:
-`python Q10.py -wp Testing -we dl_research -d mnist -e 20 -b 128 -o adam -lr 0.0001 -w_i Xavier -nhl 5 -sz 256 -a relu`
+## Part B: Fine-tuning a pre-trained model
+### Question 3
+Code for this question can be accessed [here](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartB/a2_partB_pretrained.ipynb).
 
 ---
 The codes are organized as follows:
 
 | Question | Location | Function | 
 |----------|----------|----------|
-| Question 1 | [Question-1](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q1.ipynb) | Plotting Sample Images of Each Class | 
-| Question 2-4 | [Question-2-4](https://github.com/oikn2018/CS6910_assignment_1/blob/main/train.py) | Feedforward Neural Network Training and Evaluating Accuracies |
-| Question 7 | [Question-7](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q7.py) | Confusion Matrix for Test Data on Best Model | 
-| Question 10 | [Question-10](https://github.com/oikn2018/CS6910_assignment_1/blob/main/Q10.py) | 3 Best Hyperparameter configurations for MNIST | 
+| Part A Question 2 | [Part_A_Question_2](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartA/q2_sweep.py) | Running Sweeps | 
+| Part A Question 4 | [Part_A_Question_4](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartA/q4_test.py) | Test Best Model Obtained and Log Predicted vs True Class for some Test Images |
+| Part B Question 3 | [Part_B_Question_3](https://github.com/oikn2018/CS6910_assignment_2/blob/main/PartB/a2_partB_pretrained.ipynb) | Pretrained ResNet50 trained on iNaturalist Dataset | 
+
