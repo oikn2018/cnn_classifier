@@ -320,21 +320,6 @@ def train():
         val_loader = torch.utils.data.DataLoader(test_split, batch_size=batch_size, shuffle=False)
 
 
-        # # Use the samplers to create the DataLoader for test set
-        # test_loader = torch.utils.data.DataLoader(
-        #     dataset = test_dataset,
-        #     batch_size=batch_size,
-        #     # sampler=test_sampler
-        #     shuffle = False
-        # )
-
-
-        # train_loader = torch.utils.data.DataLoader(
-        #     dataset = train_dataset,
-        #     batch_size=batch_size,
-        #     sampler=train_sampler
-        #     # shuffle = True
-        # )
 
         net = CNN(config=config).to(device)
         loss_fn = nn.CrossEntropyLoss()
