@@ -19,6 +19,8 @@ from PIL import Image
 from torchvision.datasets import ImageFolder
 from torch.utils.data.sampler import SubsetRandomSampler
 from tqdm import tqdm
+from torch.utils.data import Subset
+from sklearn.model_selection import train_test_split
 import argparse
 import warnings
 random.seed(0)
@@ -323,38 +325,56 @@ def train():
             transform=transform_test
         )
 
-        # Define the indices to split between training and validation datasets
-        num_train = len(train_dataset)
-        indices = list(range(num_train))
+        # # Define the indices to split between training and validation datasets
+        # num_train = len(train_dataset)
+        # indices = list(range(num_train))
 
-        split = int(np.floor(0.2 * num_train))
+        # split = int(np.floor(0.2 * num_train))
 
-        # Shuffle the indices before splitting
-        np.random.seed(0)
-        np.random.shuffle(indices)
+        # # Shuffle the indices before splitting
+        # np.random.seed(0)
+        # np.random.shuffle(indices)
 
-        train_indices, val_indices = indices[split:], indices[:split]
+        # train_indices, val_indices = indices[split:], indices[:split]
 
-        # Define the samplers for training and validation sets
-        train_sampler = SubsetRandomSampler(train_indices)
-        # val_sampler = SubsetRandomSampler(val_indices)
+        # # Define the samplers for training and validation sets
+        # train_sampler = SubsetRandomSampler(train_indices)
+        # # val_sampler = SubsetRandomSampler(val_indices)
 
 
-        # Use the samplers to create the DataLoader for test set
-        test_loader = torch.utils.data.DataLoader(
-            dataset = test_dataset,
-            batch_size=batch_size,
-            # sampler=test_sampler
-            shuffle = False
+        # generate indices: instead of the actual data we pass in integers instead
+        train_indices, test_indices, _, _ = train_test_split(
+            range(len(train_dataset)),
+            train_dataset.targets,
+            stratify=train_dataset.targets,
+            test_size=0.2,
+            random_state=0
         )
 
+        # generate subset based on indices
+        train_split = Subset(train_dataset, train_indices)
+        test_split = Subset(train_dataset, test_indices)
 
-        train_loader = torch.utils.data.DataLoader(
-            dataset = train_dataset,
-            batch_size=batch_size,
-            sampler=train_sampler
-            # shuffle = True
-        )
+        # create batches
+        train_loader = torch.utils.data.DataLoader(train_split, batch_size=batch_size, shuffle=True)
+        val_loader = torch.utils.data.DataLoader(test_split, batch_size=batch_size, shuffle=False)
+
+
+        # # Use the samplers to create the DataLoader for test set
+        # test_loader = torch.utils.data.DataLoader(
+        #     dataset = test_dataset,
+        #     batch_size=batch_size,
+        #     # sampler=test_sampler
+        #     shuffle = False
+        # )
+
+
+        # train_loader = torch.utils.data.DataLoader(
+        #     dataset = train_dataset,
+        #     batch_size=batch_size,
+        #     sampler=train_sampler
+        #     # shuffle = True
+        # )
 
         net = CNN(config=config).to(device)
         loss_fn = nn.CrossEntropyLoss()
@@ -378,24 +398,13 @@ def train():
 
             net.eval()
             with torch.no_grad():
-                for i, data in enumerate(test_loader, 0):
+                for i, data in enumerate(val_loader, 0):
                     inputs, labels = data
                     inputs, labels = inputs.to(device), labels.to(device)     
                     # Forward Pass
                     outputs = net(inputs)
                     # Find the Loss
-                    test_loss = loss_fn(outputs, labels)
-
-                    if test_loss < min_test_loss:
-                        min_test_loss = test_loss
-                        print(f"\nMin Test loss: {min_test_loss}")
-                        print(f"\nSaving best model for epoch: {epoch+1}\n")
-                        torch.save({
-                            'epoch': epoch+1,
-                            'model_state_dict': net.state_dict(),
-                            'optimizer_state_dict': opt.state_dict(),
-                            'loss': loss_fn,
-                            }, 'outputs/best_model.pth')
+                    val_loss = loss_fn(outputs, labels)
 
                     # val_loss = val_loss.item()
                     # val_loss_arr.append(val_loss.item())
@@ -408,15 +417,15 @@ def train():
             # loss = loss.item()
             # val_loss = val_loss.item()
             train_acc = evaluation(train_loader, net)
-            test_acc = evaluation(test_loader,net)
-            print('Epoch: %d/%d, Loss: %0.2f, Val Loss: %0.2f, Test accuracy: %0.2f, Train accuracy: %0.2f'%((epoch+1), config['epochs'], loss.item(), test_loss.item(), test_acc, train_acc))
+            val_acc = evaluation(val_loader,net)
+            print('Epoch: %d/%d, Loss: %0.2f, Validation Loss: %0.2f, Validation accuracy: %0.2f, Train accuracy: %0.2f'%((epoch+1), config['epochs'], loss.item(), val_loss.item(), val_acc, train_acc))
 
         
             metrics = {
             "accuracy":train_acc,
             "loss":loss.item(),
-            "test_accuracy": test_acc,
-            "test_loss": test_loss.item(),
+            "test_accuracy": val_acc,
+            "test_loss": val_loss.item(),
             "epochs":(epoch+1)
             }
 
@@ -424,5 +433,4 @@ def train():
 
 
 wandb.agent(sweep_id_parta, function=train, count=1)
-
 
