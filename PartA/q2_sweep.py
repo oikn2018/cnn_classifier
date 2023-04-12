@@ -17,7 +17,9 @@ import datetime
 from zipfile import ZipFile
 from PIL import Image
 from torchvision.datasets import ImageFolder
-from torch.utils.data.sampler import SubsetRandomSampler
+
+from torch.utils.data import Subset
+from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import argparse
 import warnings
@@ -51,39 +53,23 @@ image_size = (256,256)
 num_layers = 5
 num_classes = len(classes)
 
-# #default config
+#default Config
 # config = {
+#    "wandb_project": 'Testing',
+#    "wandb_entity": 'dl_research',
 #     "size_filters" : [7,5,5,3,3],
 #     "activation" : 'ReLU',
-#     "learning_rate": 1e-3,
-#     "filters_org": 1,
+#     "learning_rate": 0.0001,
+#     "filters_org": 2,
 #     "num_filters" : 64,
-#     "dense_layer_size" : 256,
-#     "batch_norm": True,
-#     "data_augment": True,
-#     "dropout":0.2,
-#     "batch_size":32,
-#     "epochs": 10
+#     "dense_layer_size" : 128,
+#     "batch_norm": False,
+#     "data_augment": False,
+#     "dropout":0.1,
+#     "batch_size":8,
+#     "epochs": 15
 #     }
 
-
-
-# def imshow(img, title):
-#   npimg = img.numpy()/2 + 0.5
-#   plt.figure(figsize = (batch_size*3, 3))
-#   plt.axis('off')
-#   plt.imshow(np.transpose(npimg, (1,2,0)))
-#   plt.title(title)
-#   plt.show()
-
-# def show_batch_images(dataloader):
-#   images, labels = next(iter(dataloader))
-#   img = torchvision.utils.make_grid(images)
-#   imshow(img, title = [classes[x.item()] for x in labels])
-#   # imshow(img, title = [[x.item()] for x in labels])
-
-# for i in range(4):
-#   show_batch_images(train_loader)
 
 
 
@@ -104,18 +90,6 @@ class CNN(nn.Module):
       config['dropout'] = 0.2
       config['batch_size'] = 32
       config['epochs'] =  10
-    # else:
-    #   self.size_filters = config['size_filters']
-    #   self.activation = config['activation']
-    #   self.learning_rate = config['learning_rate']
-    #   self.filters_org =  config['filters_org']
-    #   self.num_filters =  config['num_filters']
-    #   self.dense_layer_size = config['dense_layer_size']
-    #   self.batch_norm = config['batch_norm']
-    #   self.data_augment = config['data_augment']
-    #   self.dropout = config['dropout']
-    #   self.batch_size = config['batch_size']
-    #   self.epochs =  config['epochs']
 
     
 
@@ -301,37 +275,25 @@ def train():
             transform=transform_val
         )
 
-        # Define the indices to split between training and validation datasets
-        num_train = len(train_dataset)
-        indices = list(range(num_train))
 
-        split = int(np.floor(0.2 * num_train))
 
-        # Shuffle the indices before splitting
-        np.random.seed(0)
-        np.random.shuffle(indices)
-
-        train_indices, val_indices = indices[split:], indices[:split]
-
-        # Define the samplers for training and validation sets
-        train_sampler = SubsetRandomSampler(train_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-
-        # Use the samplers to create the DataLoader for validation set
-        val_loader = torch.utils.data.DataLoader(
-            dataset = val_dataset,
-            batch_size=batch_size,
-            sampler=val_sampler
-            # shuffle = True
+        # generate indices: instead of the actual data we pass in integers instead
+        train_indices, val_indices, _, _ = train_test_split(
+            range(len(train_dataset)),
+            train_dataset.targets,
+            stratify=train_dataset.targets,
+            test_size=0.2,
+            random_state=0
         )
 
+        # generate subset based on indices
+        train_split = Subset(train_dataset, train_indices)
+        test_split = Subset(train_dataset, val_indices)
 
-        train_loader = torch.utils.data.DataLoader(
-            dataset = train_dataset,
-            batch_size=batch_size,
-            sampler=train_sampler
-            # shuffle = True
-        )
+        # create batches
+        train_loader = torch.utils.data.DataLoader(train_split, batch_size=batch_size, shuffle=True)
+        val_loader = torch.utils.data.DataLoader(test_split, batch_size=batch_size, shuffle=False)
+
 
         net = CNN(config=config).to(device)
         loss_fn = nn.CrossEntropyLoss()
@@ -339,14 +301,6 @@ def train():
         run.name = net.run_name
         print(run.name)
 
-
-        # loss = 0
-        # val_loss = 0
-        # train_acc = 0
-        # val_acc = 0
-        # max_epochs = 2
-        # loss_ep_arr = []
-        # val_loss_ep_arr = []
 
         for epoch in range(config['epochs']):
             for i, data in enumerate(train_loader, 0):
@@ -372,16 +326,10 @@ def train():
                     # Find the Loss
                     val_loss = loss_fn(outputs, labels)
 
-                    # val_loss = val_loss.item()
-                    # val_loss_arr.append(val_loss.item())
                     del inputs, labels, outputs
                     torch.cuda.empty_cache()
             net.train()
-            # loss_ep_arr.append(loss.item())
-            # val_loss_ep_arr.append(val_loss.item())
 
-            # loss = loss.item()
-            # val_loss = val_loss.item()
             train_acc = evaluation(train_loader, net)
             val_acc = evaluation(val_loader,net)
             print('Epoch: %d/%d, Loss: %0.2f, Val Loss: %0.2f, Validation accuracy: %0.2f, Train accuracy: %0.2f'%((epoch+1), config['epochs'], loss.item(), val_loss.item(), val_acc, train_acc))
@@ -401,5 +349,4 @@ def train():
 wandb.agent('bxdejte9', function=train, count=5)
 
 # print("Final Scores: \nModel Hyperparameters: {}\nAccuracy: {}\nLoss: {}\nValidation Accuracy: {}\nValidation Loss {}".format(tuned_models[0]['model'], tuned_models[0]['accuracy'], tuned_models[0]['loss'], tuned_models[0]['validation_accuracy'], tuned_models[0]['validation_loss']))
-
 
