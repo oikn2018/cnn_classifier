@@ -116,30 +116,6 @@ class CNN(nn.Module):
 
     if config == None:
        config = config
-    #   config = {}
-    #   config['size_filters'] = [7,5,5,3,3]
-    #   config['activation'] = 'ReLU'
-    #   config['learning_rate'] = 1e-3
-    #   config['filters_org'] =  1
-    #   config['num_filters'] =  64
-    #   config['dense_layer_size'] =  256
-    #   config['batch_norm'] =  True
-    #   config['data_augment'] = True
-    #   config['dropout'] = 0.2
-    #   config['batch_size'] = 32
-    #   config['epochs'] =  10
-    # else:
-    #   self.size_filters = config['size_filters']
-    #   self.activation = config['activation']
-    #   self.learning_rate = config['learning_rate']
-    #   self.filters_org =  config['filters_org']
-    #   self.num_filters =  config['num_filters']
-    #   self.dense_layer_size = config['dense_layer_size']
-    #   self.batch_norm = config['batch_norm']
-    #   self.data_augment = config['data_augment']
-    #   self.dropout = config['dropout']
-    #   self.batch_size = config['batch_size']
-    #   self.epochs =  config['epochs']
 
     
 
@@ -234,7 +210,7 @@ sweep_config_parta = {
     "name" : "Assignment2_PA_Q4",
     "method" : "bayes",
     'metric': {
-        'name': 'test_accuracy',
+        'name': 'validation_accuracy',
         'goal': 'maximize'
     },
     "parameters" : {
@@ -320,30 +296,14 @@ def train():
             transform=transform_train
         )
 
-        test_dataset = ImageFolder(
+        val_dataset = ImageFolder(
             'inaturalist_12K/val',
             transform=transform_test
         )
 
-        # # Define the indices to split between training and validation datasets
-        # num_train = len(train_dataset)
-        # indices = list(range(num_train))
-
-        # split = int(np.floor(0.2 * num_train))
-
-        # # Shuffle the indices before splitting
-        # np.random.seed(0)
-        # np.random.shuffle(indices)
-
-        # train_indices, val_indices = indices[split:], indices[:split]
-
-        # # Define the samplers for training and validation sets
-        # train_sampler = SubsetRandomSampler(train_indices)
-        # # val_sampler = SubsetRandomSampler(val_indices)
-
 
         # generate indices: instead of the actual data we pass in integers instead
-        train_indices, test_indices, _, _ = train_test_split(
+        train_indices, val_indices, _, _ = train_test_split(
             range(len(train_dataset)),
             train_dataset.targets,
             stratify=train_dataset.targets,
@@ -353,7 +313,7 @@ def train():
 
         # generate subset based on indices
         train_split = Subset(train_dataset, train_indices)
-        test_split = Subset(train_dataset, test_indices)
+        test_split = Subset(train_dataset, val_indices)
 
         # create batches
         train_loader = torch.utils.data.DataLoader(train_split, batch_size=batch_size, shuffle=True)
@@ -383,7 +343,7 @@ def train():
         print(run.name)
 
         for epoch in range(config['epochs']):
-            min_test_loss = float('inf')
+
             for i, data in enumerate(train_loader, 0):
                 inputs, labels = data
                 inputs, labels = inputs.to(device), labels.to(device)
@@ -397,6 +357,7 @@ def train():
                 torch.cuda.empty_cache()
 
             net.eval()
+
             with torch.no_grad():
                 for i, data in enumerate(val_loader, 0):
                     inputs, labels = data
@@ -406,16 +367,10 @@ def train():
                     # Find the Loss
                     val_loss = loss_fn(outputs, labels)
 
-                    # val_loss = val_loss.item()
-                    # val_loss_arr.append(val_loss.item())
                     del inputs, labels, outputs
                     torch.cuda.empty_cache()
             net.train()
-            # loss_ep_arr.append(loss.item())
-            # val_loss_ep_arr.append(val_loss.item())
 
-            # loss = loss.item()
-            # val_loss = val_loss.item()
             train_acc = evaluation(train_loader, net)
             val_acc = evaluation(val_loader,net)
             print('Epoch: %d/%d, Loss: %0.2f, Validation Loss: %0.2f, Validation accuracy: %0.2f, Train accuracy: %0.2f'%((epoch+1), config['epochs'], loss.item(), val_loss.item(), val_acc, train_acc))
@@ -424,8 +379,8 @@ def train():
             metrics = {
             "accuracy":train_acc,
             "loss":loss.item(),
-            "test_accuracy": val_acc,
-            "test_loss": val_loss.item(),
+            "validation_accuracy": val_acc,
+            "validation_loss": val_loss.item(),
             "epochs":(epoch+1)
             }
 
@@ -433,4 +388,3 @@ def train():
 
 
 wandb.agent(sweep_id_parta, function=train, count=1)
-
